@@ -1,1 +1,1 @@
-# CS32
+# CS32 - Intro to C++ II
