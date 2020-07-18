@@ -1,0 +1,218 @@
+Your total score for Project 3 is 83 out of 100.
+This breaks down as:
+  Player moves, blocked by walls, can do something.          9/10
+  Can fight, win or lose fights.                             8/10
+  Approached by bogeymen, snakewomen, goblins when in range. 7/10
+  Wield weapons, read scrolls, see inventory.                5/10
+  Statistics displayed.                                      5/5
+  Levels feel like rooms connected by corridors.             5/5
+  Overall feel of the complete game.                         8/10
+  Goblin recursion, reasonable time.                         8/10
+  Programming style.                                         8/10
+  Responsibilities assigned to appropriate clases.           10/10
+  Documentation.                                             10/10
+
+
+=== Recursive Goblin movement function ===
+
+File: Dungeon.cpp
+Name: bool Level::pathExistsWithinStepCount(char tempMap[18][70], int sr, int sc, int& nr, int& nc, int er, int ec, int stepsRemaining, int& minPath)
+
+THis function is called by (is subfunction of) void Level::getMonsterMoves()
+
+
+=== Description of Game Design ===
+The class tiers are as follows:
+
+Actor Class Hiercharchy
+    Tier 1
+        Actor - Virtual
+    Tier 2
+        Player
+        Monsters - Virtual
+            Snakewoman
+            Goblin
+            Bogeyman
+            Dragon
+
+
+Game Object Class Hiercharchy
+
+    Tier 1
+        GameObject - Parent-Base - Virtual
+    Tier 2
+        Weapon - Child-base - Virtual
+        Scrolls
+    Tier 3
+        Weapon Types
+
+There is also a Dungeon class which serves a virtual base for the level class.
+THe Dungeon class was used mostly in testing, I wound up just passing the entirely of the functionality to the Level class.
+The Level class controls almost everything in the game.
+It maintains:
+	List of ALL previous and current player positiosn
+	List of ALL monsters
+	List of ALL game objects
+	The character map
+	Printing of map and messages
+EVERY list in this program is a list of structs, which function as data nodes - as follows:
+
+struct PlayerNode {
+    char playerChar = '@';
+    int playerRow;
+    int playerCol;
+    int playerSleepTime;
+    Player* playerPtr = nullptr;
+};
+
+struct MonsterNode {
+    string monsterID;
+    char monsterChar;
+    int monsterRow;
+    int monsterCol;
+    int monsterSleepTime;
+    Monster* monsterPtr = nullptr;
+    int smellDistance = 1;
+    bool playerSmelt = false;
+};
+
+struct GameObjectNode {
+    char itemChar;
+    int itemRow;
+    int itemCol;
+    GameObject* itemPtr = nullptr;
+};
+
+struct CoordinatePair {
+    int row;
+    int col;
+};
+
+struct InventoryNode {
+    char itemSlotLetter;
+    string itemDescrip;
+    GameObject* itemPtr = nullptr;
+};
+
+By accessing these nodes, the level class SETS and GETS the state of just about anything that can change.
+The Actor classes send commands to the Level object in order to have the level execute state changes.
+
+=== Non-Trivial Algorithm Descriptions ===
+
+
+
+=== bool Level::pathExistsWithinStepCount(char tempMap[18][70], int sr, int sc, int& nr, int& nc, int er, int ec, int stepsRemaining, int& minPath)
+USED EXCLUSIVELY FOR GOBLIN MOVEMENT
+A temp map is created to be able to mark positions are visited if needed. THe algorithm in it's CURRENT state only marks the start psotion - so it basically doesn't mark anything.
+The start position is the Goblin's position.
+THe NEXT position is determined by a series of if statements that check if the neighbor positions are open. 
+The end position is the player's position.
+
+Base cases 
+	if start position is a # - return false
+	if start pos == end pos - return false
+	if stepsRemaining == 0 - return false
+	if nextPost == player pos - return true
+
+Recursive Cases (4)
+	Check neighbor positons
+		if position is OPEN
+			DECRMENT stepsRemaining AND set NEXT position based on direciton
+			make a recursive call the the function in that direction
+			store result in a bool variable
+
+Compare results of recursive returns
+	return TRUE IF any of them returned true;
+	else - return false	
+
+
+
+=== void Level::getMonsterMoves()
+Look at player state history to obtain players current position
+Cycle through ENTIRE monster list
+IF a monster's smell distance is less than the distance to the player
+	Calc direction towards player by comaring monster positon and player position
+	New coordinates are calculated to be one step towards player
+	Check for obstructions in that positon
+If an obstruction exists, the monster doesn't move, UNLESS it's a Goblin.
+Goblin - move based on PathExistsWIthinStepCount() funciton.
+
+
+
+
+
+
+
+
+
+
+
+
+=== void Level::constructNextLevel(int levelNumber, int m_M, Player* player, Game* game )
+
+Fill level entirely with wall
+Create random player spawn  location AND random descend locaiton
+WHILE pathExists() function (recrusive) returns false - make randomly located and dimensioned rooms and cooridors
+	Create room around player
+	Create T shaped coordior cross at cetner point of this room
+	
+	Create room around descend icon
+	Create T shaped coordior cross at cetner point of this room
+
+	Generate a random umebr of rooms (4-6) - with RANDOMLY selected wall elements to act as midpoints
+	Decode the direction towards descend from the rooms midpoint
+	Attach rand(1 or 2) cooridors in direction towards descend icon
+		Decide 50/50 if cooridor will be horizontal or vertical
+
+	Test if path exists between player and descend
+		if not - continue WHILE loop
+	If levelNumber == 4
+		change descend to Golden Idol icon
+
+Re-print walls around perimeter
+
+Calc monster population weights based on randomnly generated max number of monsters
+Spawn random monsters
+
+Generate random objects on map
+
+
+=== void Level::monsterDeadCheck() {
+// NOTE: this could be done more efficeintly by not re-constructing the list, but I was still experimenting with lists while writing this funciton
+    // Removes DEAD monsters from LIST
+    // Stores ALIVE monster in TEMP list
+    // Reconstructs Level's monster list as a COPY of temp
+    // TempList = m_monsterList - dead monsters
+
+
+=== void Level::getMonsterAttacks()
+Cycles ENITER monster list
+Gets attriubte of any monster next to player
+Calc hit/miss and damage imparted
+DIsplay message
+
+
+=== void Level::printMap()
+Scan ALL lists - extract positon states of EVERY element - update map
+
+Print game object icons
+
+Print monster icons
+
+Print player icon
+
+Print map
+	Print status bar
+
+Print activity messages
+
+
+=== Bugs, Features not implemented, inefficiencies ===
+
+- isAlive() isn't working for player class - game runs even after player HP is negative
+- The golden idol spawn isn't working - so you can keep on generating new levels if you keep descending.
+- weaponSwap() is glitchy - getCharacter() has some black box kind of behavior, which I believe is the cause
+
+
+
+
